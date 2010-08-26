@@ -20,7 +20,7 @@ from matplotlib.transforms import Affine2D, Bbox, Transform ,\
      BboxBase,  BboxTransformTo
 from matplotlib.lines import Line2D
 
-from matplotlib.artist import allow_rasterization
+from matplotlib.artist import allow_rasterization, take_gray_into_account
 
 import matplotlib.nxutils as nxutils
 
@@ -510,6 +510,7 @@ class Text(Artist):
 
 
     @allow_rasterization
+    @take_gray_into_account
     def draw(self, renderer):
         """
         Draws the :class:`Text` object to the given *renderer*.
@@ -1116,6 +1117,7 @@ class TextWithDash(Text):
         props.extend([self._x, self._y, self._dashlength, self._dashdirection, self._dashrotation, self._dashpad, self._dashpush])
         return tuple(props)
 
+    @take_gray_into_account
     def draw(self, renderer):
         """
         Draw the :class:`TextWithDash` object to the given *renderer*.
@@ -1958,6 +1960,7 @@ class Annotation(Text, _AnnotationBase):
 
 
     @allow_rasterization
+    @take_gray_into_account
     def draw(self, renderer):
         """
         Draw the :class:`Annotation` object to the given *renderer*.

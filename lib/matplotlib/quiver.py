@@ -21,7 +21,7 @@ import matplotlib.collections as collections
 import matplotlib.transforms as transforms
 import matplotlib.text as mtext
 import matplotlib.artist as martist
-from matplotlib.artist import allow_rasterization
+from matplotlib.artist import allow_rasterization, take_gray_into_account
 from matplotlib import docstring
 import matplotlib.font_manager as font_manager
 from matplotlib.cbook import delete_masked_points
@@ -300,6 +300,7 @@ class QuiverKey(martist.Artist):
             return y
 
     @allow_rasterization
+    @take_gray_into_account
     def draw(self, renderer):
         self._init()
         self.vector.draw(renderer)
@@ -447,6 +448,7 @@ class Quiver(collections.PolyCollection):
                 self.width = 0.06 * self.span / sn
 
     @allow_rasterization
+    @take_gray_into_account
     def draw(self, renderer):
         self._init()
         if (self._new_UV or self.angles == 'xy'

@@ -10,7 +10,7 @@ import matplotlib
 rcParams = matplotlib.rcParams
 
 import matplotlib.artist as martist
-from matplotlib.artist import allow_rasterization
+from matplotlib.artist import allow_rasterization, take_gray_into_account
 import matplotlib.axis as maxis
 import matplotlib.cbook as cbook
 import matplotlib.collections as mcoll
@@ -1823,6 +1823,7 @@ class Axes(martist.Artist):
     #### Drawing
 
     @allow_rasterization
+    @take_gray_into_account
     def draw(self, renderer=None, inframe=False):
         "Draw everything (plot lines, axes, labels)"
         if renderer is None:

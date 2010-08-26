@@ -11,7 +11,7 @@ from numpy import ma
 
 from matplotlib import rcParams
 import matplotlib.artist as martist
-from matplotlib.artist import allow_rasterization
+from matplotlib.artist import allow_rasterization, take_gray_into_account
 import matplotlib.colors as mcolors
 import matplotlib.cm as cm
 import matplotlib.cbook as cbook
@@ -334,6 +334,7 @@ class _AxesImageBase(martist.Artist, cm.ScalarMappable):
         return False
 
     @allow_rasterization
+    @take_gray_into_account
     def draw(self, renderer, *args, **kwargs):
         if not self.get_visible(): return
         if (self.axes.get_xscale() != 'linear' or
@@ -344,6 +345,10 @@ class _AxesImageBase(martist.Artist, cm.ScalarMappable):
         gc = renderer.new_gc()
         gc.set_clip_rectangle(self.axes.bbox.frozen())
         gc.set_clip_path(self.get_clip_path())
+
+        # This is the equivalent to update_scalarmappable() for Collections.
+        # It's needed to make rcParams['gray'] working properly.
+        self.set_data(self._A)
 
         if self._check_unsampled_image(renderer):
             self._draw_unsampled_image(renderer, gc)
@@ -827,6 +832,7 @@ class PcolorImage(martist.Artist, cm.ScalarMappable):
         return im
 
     @allow_rasterization
+    @take_gray_into_account
     def draw(self, renderer, *args, **kwargs):
         if not self.get_visible(): return
         im = self.make_image(renderer.get_image_magnification())
@@ -983,6 +989,7 @@ class FigureImage(martist.Artist, cm.ScalarMappable):
         return im
 
     @allow_rasterization
+    @take_gray_into_account
     def draw(self, renderer, *args, **kwargs):
         if not self.get_visible(): return
         # todo: we should be able to do some cacheing here
@@ -1122,6 +1129,7 @@ class BboxImage(_AxesImageBase):
 
 
     @allow_rasterization
+    @take_gray_into_account
     def draw(self, renderer, *args, **kwargs):
         if not self.get_visible(): return
         # todo: we should be able to do some cacheing here

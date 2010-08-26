@@ -5,7 +5,7 @@ from __future__ import division
 
 from matplotlib  import rcParams
 import matplotlib.artist as artist
-from matplotlib.artist import allow_rasterization
+from matplotlib.artist import allow_rasterization, take_gray_into_account
 import matplotlib.cbook as cbook
 import matplotlib.font_manager as font_manager
 import matplotlib.lines as mlines
@@ -217,6 +217,7 @@ class Tick(artist.Artist):
         return self._loc
 
     @allow_rasterization
+    @take_gray_into_account
     def draw(self, renderer):
         if not self.get_visible(): return
         renderer.open_group(self.__name__)
@@ -929,6 +930,7 @@ class Axis(artist.Artist):
         return self._smart_bounds
 
     @allow_rasterization
+    @take_gray_into_account
     def draw(self, renderer, *args, **kwargs):
         'Draw the axis lines, grid lines, tick lines and labels'
         ticklabelBoxes = []

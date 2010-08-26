@@ -7,7 +7,7 @@ import matplotlib as mpl
 import numpy as np
 import matplotlib.cbook as cbook
 import matplotlib.artist as artist
-from matplotlib.artist import allow_rasterization
+from matplotlib.artist import allow_rasterization, take_gray_into_account
 import matplotlib.colors as colors
 from matplotlib import docstring
 import matplotlib.transforms as transforms
@@ -362,6 +362,7 @@ class Patch(artist.Artist):
         return self._path_effects
 
     @allow_rasterization
+    @take_gray_into_account
     def draw(self, renderer):
         'Draw the :class:`Patch` to the given *renderer*.'
         if not self.get_visible(): return
@@ -484,6 +485,7 @@ class Shadow(Patch):
     def get_patch_transform(self):
         return self.patch.get_patch_transform() + self._shadow_transform
 
+    @take_gray_into_account
     def draw(self, renderer):
         self._update_transform(renderer)
         Patch.draw(self, renderer)
@@ -1266,6 +1268,7 @@ class Arc(Ellipse):
 
 
     @allow_rasterization
+    @take_gray_into_account
     def draw(self, renderer):
         """
         Ellipses are normally drawn using an approximation that uses
@@ -3852,6 +3855,7 @@ class FancyArrowPatch(Patch):
 
 
 
+    @take_gray_into_account
     def draw(self, renderer):
         if not self.get_visible(): return
 
@@ -4192,6 +4196,7 @@ class ConnectionPatch(FancyArrowPatch):
         return True
 
 
+    @take_gray_into_account
     def draw(self, renderer):
         """
         Draw.

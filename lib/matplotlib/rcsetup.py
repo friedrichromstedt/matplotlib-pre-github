@@ -341,6 +341,7 @@ defaultParams = {
     'units'             : [False, validate_bool],
     'interactive'       : [False, validate_bool],
     'timezone'          : ['UTC', str],
+    'gray'              : [False, validate_bool],
 
     # the verbosity setting
     'verbose.level'     : ['silent', validate_verbose],

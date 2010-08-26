@@ -18,7 +18,7 @@ from path import Path
 from transforms import Affine2D, Bbox, TransformedPath, IdentityTransform
 
 from matplotlib import rcParams
-from artist import allow_rasterization
+from artist import allow_rasterization, take_gray_into_account
 from matplotlib import docstring
 from matplotlib.font_manager import FontProperties
 
@@ -495,6 +495,7 @@ class Line2D(Artist):
         return np.alltrue(x[1:]-x[0:-1]>=0)
 
     @allow_rasterization
+    @take_gray_into_account
     def draw(self, renderer):
         if self._invalidy or self._invalidx:
             self.recache()

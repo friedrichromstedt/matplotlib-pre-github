@@ -17,6 +17,7 @@ width and height of the its child text.
 
 import matplotlib.transforms as mtransforms
 import matplotlib.artist as martist
+from matplotlib.artist import take_gray_into_account
 import matplotlib.text as mtext
 import numpy as np
 from matplotlib.transforms import Bbox, BboxBase, TransformedBbox, \
@@ -225,6 +226,7 @@ class OffsetBox(martist.Artist):
         px, py = self.get_offset(w, h, xd, yd, renderer)
         return mtransforms.Bbox.from_bounds(px-xd, py-yd, w, h)
 
+    @take_gray_into_account
     def draw(self, renderer):
         """
         Update the location of children if necessary and draw them
@@ -494,6 +496,7 @@ class DrawingArea(OffsetBox):
         a.set_transform(self.get_transform())
 
 
+    @take_gray_into_account
     def draw(self, renderer):
         """
         Draw the children
@@ -670,6 +673,7 @@ class TextArea(OffsetBox):
         return w, h, 0., d
 
 
+    @take_gray_into_account
     def draw(self, renderer):
         """
         Draw the children
@@ -782,6 +786,7 @@ class AuxTransformBox(OffsetBox):
         return ub.width, ub.height, 0., 0.
 
 
+    @take_gray_into_account
     def draw(self, renderer):
         """
         Draw the children
@@ -979,6 +984,7 @@ class AnchoredOffsetbox(OffsetBox):
             if fontsize:
                 self.patch.set_mutation_scale(fontsize)
 
+    @take_gray_into_account
     def draw(self, renderer):
         "draw the artist"
 
@@ -1156,6 +1162,7 @@ class OffsetImage(OffsetBox):
 
 
 
+    @take_gray_into_account
     def draw(self, renderer):
         """
         Draw the children
@@ -1354,6 +1361,7 @@ class AnnotationBbox(martist.Artist, _AnnotationBase):
 
 
 
+    @take_gray_into_account
     def draw(self, renderer):
         """
         Draw the :class:`Annotation` object to the given *renderer*.

@@ -18,7 +18,7 @@ import matplotlib.cm as cm
 from matplotlib import docstring
 import matplotlib.transforms as transforms
 import matplotlib.artist as artist
-from matplotlib.artist import allow_rasterization
+from matplotlib.artist import allow_rasterization, take_gray_into_account
 import matplotlib.backend_bases as backend_bases
 import matplotlib.path as mpath
 import matplotlib.mlab as mlab
@@ -201,6 +201,7 @@ class Collection(artist.Artist, cm.ScalarMappable):
         return transform, transOffset, offsets, paths
 
     @allow_rasterization
+    @take_gray_into_account
     def draw(self, renderer):
         if not self.get_visible(): return
         renderer.open_group(self.__class__.__name__)
@@ -598,6 +599,7 @@ class PolyCollection(Collection):
     set_paths = set_verts
 
     @allow_rasterization
+    @take_gray_into_account
     def draw(self, renderer):
         if self._sizes is not None:
             self._transforms = [
@@ -697,6 +699,7 @@ class RegularPolyCollection(Collection):
         self.set_transform(transforms.IdentityTransform())
 
     @allow_rasterization
+    @take_gray_into_account
     def draw(self, renderer):
         self._transforms = [
             transforms.Affine2D().rotate(-self._rotation).scale(
@@ -907,6 +910,7 @@ class CircleCollection(Collection):
         return self._sizes
 
     @allow_rasterization
+    @take_gray_into_account
     def draw(self, renderer):
         # sizes is the area of the circle circumscribing the polygon
         # in points^2
@@ -995,6 +999,7 @@ class EllipseCollection(Collection):
             self.set_transform(_affine(m))
 
     @allow_rasterization
+    @take_gray_into_account
     def draw(self, renderer):
         self._set_transforms()
         Collection.draw(self, renderer)
@@ -1193,6 +1198,7 @@ class QuadMesh(Collection):
         return self._bbox
 
     @allow_rasterization
+    @take_gray_into_account
     def draw(self, renderer):
         if not self.get_visible(): return
         renderer.open_group(self.__class__.__name__)
@@ -1208,8 +1214,9 @@ class QuadMesh(Collection):
 
         offsets = np.asarray(offsets, np.float_)
 
-        if self.check_update('array'):
-            self.update_scalarmappable()
+        # Don't protect this call with optimisations, it's needed to be
+        # evaluated to make rcParams['gray'] working properly.
+        self.update_scalarmappable()
 
         if not transform.is_affine:
             coordinates = self._coordinates.reshape(

@@ -23,8 +23,6 @@ from path import Path
 # http://groups.google.com/groups?hl=en&lr=&threadm=mailman.5090.1098044946.5135.python-list%40python.org&rnum=1&prev=/groups%3Fq%3D__doc__%2Bauthor%253Ajdhunter%2540ace.bsd.uchicago.edu%26hl%3Den%26btnG%3DGoogle%2BSearch
 
 
-
-
 def allow_rasterization(draw):
     """
     Decorator for Artist.draw method. Provides routines
@@ -63,6 +61,24 @@ def allow_rasterization(draw):
     return draw_wrapper
 
 
+def take_gray_into_account(draw):
+    """
+    Decorator for Artist.draw().  If self.is_gray() returns a true value,
+    rcParams['gray'] is set to True during the draw() call.  After the 
+    call, it is reset to its former value.
+    """
+    def wrapped(self, renderer):
+        if self.get_gray():
+            old_rcparam = rcParams['gray']
+            rcParams['gray'] = True
+            draw(self, renderer)
+            rcParams['gray'] = old_rcparam
+        else:
+            draw(self, renderer)
+
+    return wrapped
+
+
 class Artist(object):
     """
     Abstract base class for someone who renders into a
@@ -78,6 +94,7 @@ class Artist(object):
         self._transformSet = False
         self._visible = True
         self._animated = False
+        self._gray = False
         self._alpha = None
         self.clipbox = None
         self._clippath = None
@@ -528,6 +545,10 @@ class Artist(object):
         "Return the artist's animated state"
         return self._animated
 
+    def get_gray(self):
+        """Returns the artist's gray state"""
+        return self._gray
+
     def get_clip_on(self):
         'Return whether artist uses clipping'
         return self._clipon
@@ -597,6 +618,7 @@ class Artist(object):
         """
         self._agg_filter = filter_func
 
+    @take_gray_into_account
     def draw(self, renderer, *args, **kwargs):
         'Derived classes drawing method'
         if not self.get_visible(): return
@@ -640,6 +662,12 @@ class Artist(object):
         """
         self._animated = b
         self.pchanged()
+
+    def set_gray(self, gray):
+        """
+        Sets the artist's gray state.
+        """
+        self._gray = gray
 
     def update(self, props):
         """

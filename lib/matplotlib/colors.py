@@ -52,6 +52,7 @@ import re
 import numpy as np
 from numpy import ma
 import matplotlib.cbook as cbook
+import matplotlib as mpl
 
 parts = np.__version__.split('.')
 NP_MAJOR, NP_MINOR = map(int, parts[:2])
@@ -253,11 +254,118 @@ class ColorConverter:
         'k' : (0.0, 0.0, 0.0),
         'w' : (1.0, 1.0, 1.0),
         }
+    
+    def rgba_apply_rc_gray_setting(self, rgba_colour):
+        """Applies the rc gray setting.  Colour channels in the last 
+        dimension."""
 
-    cache = {}
-    def to_rgb(self, arg):
+        if not mpl.rcParams['gray']:
+            return rgba_colour
+
+        else:
+            # Copy the data.
+            rgba_colour = np.copy(rgba_colour)
+            transposed_rgba_colour = rgba_colour.T
+
+            # Extract the views of the rgb components.
+            (r, g, b, alpha) = transposed_rgba_colour
+
+            # ITU-R 601-2 luma transform, see
+            # http://www.pythonware.com/library/pil/handbook/image.htm:
+            gray = 0.299 * r + 0.587 * g + 0.114 * b
+            return np.asarray([gray, gray, gray, alpha]).T
+
+    def numeric_to_rgba_array(self, numeric_colour, alpha=None):
+        """*numeric_colour* will be passed through np.asarray, and its first
+        dimension will be interpreted as the colour dimension.  It will be 
+        converted to grayscale via ITU-R 601-2 luma transform.  If *alpha*
+        is given, it overrides the alpha channel if present, *alpha* defaults
+        to 1.0 if no alpha channel is present in *numeric_colour*.
+        
+        The operation acts on a copy of the colour array handed over.  Gray
+        rc setting is taken into account.
+        
+        Returned is the resulting colour rgba ndarray."""
+    
+        if numeric_colour.shape[0] == 3:
+            # rgb data.  Construct matching rgba array and copy data over.
+            colour_rgba = np.empty(list(numeric_colour.shape)[:-1] + [4])
+            colour_rgba[..., :3] = numeric_colour
+
+            # Handle *alpha*:
+            if alpha is None:
+                colour_rgba[..., 3] = 1.0
+            else:
+                colour_rgba[..., 3] = alpha
+
+        elif numeric_colour.shape[0] == 4:
+            # rgba data.  Copy data.
+            colour_rgba = np.copy(numeric_colour)
+
+            # Handle *alpha*:
+            if alpha is not None:
+                colour_rgba[..., 3] = alpha
+
+        # Apply rc gray setting:
+        return self.rgba_apply_rc_gray_setting(colour_rgba)
+
+    def single_string_to_rgba_array(self, string):
+        """Interprets a single colour string as rgba colour.  Does not take 
+        rc gray setting into account."""
+
+        string_lower = string.lower()
+
+        if string_lower in self.colors:
+            color = self.colors[string_lower]
+        else:
+            if string_lower in cnames:
+                spec = cnames[string_lower]
+            else:
+                spec = string_lower
+
+            if spec.startswith('#'):
+                color = hex2color(spec)
+            else:
+                fl = float(spec)
+                if fl < 0 or fl > 1:
+                    raise ValueError(
+                           'gray (string) must be in range 0-1')
+                color = tuple([fl]*3)
+
+        (r, g, b) = color
+        return np.asarray([r, g, b, 1])
+
+    # Converts the strings to the last index running:
+    _string_to_rgba_array = np.frompyfunc(
+            single_string_to_rgba_array, 2, 1)
+
+    def string_to_rgba_array(self, string_colour, alpha=None):
+        """Converts all elements of *string_colour* to colours.  The
+        channel index is the first index of the return value."""
+
+        string_colour = np.asarray(string_colour)
+
+        if string_colour.shape == ():
+            # Convert to scalar:
+            numeric_colour = self.single_string_to_rgba_array(string_colour[()])
+        else:
+            # Prepare return array:
+            numeric_colour = np.empty(list(string_colour.shape) + [4])
+            # Fill return array:
+            for index in xrange(0, len(string_colour)):
+                numeric_colour[index] = self.string_to_rgba_array(
+                    string_colour[index])
+
+        # Apply alpha:
+        if alpha is not None:
+            numeric_colour[..., 3] = alpha
+
+        # Apply rc gray setting:
+        return self.rgba_apply_rc_gray_setting(numeric_colour)
+
+    def to_rgba_array(self, arg, alpha=None):
         """
-        Returns an *RGB* tuple of three floats from 0-1.
+        Returns an *RGBA* tuple of three floats from 0-1.
 
         *arg* can be an *RGB* or *RGBA* sequence or a string in any of
         several forms:
@@ -267,137 +375,38 @@ class ColorConverter:
             3) a standard name, like 'aqua'
             4) a float, like '0.4', indicating gray on a 0-1 scale
 
-        if *arg* is *RGBA*, the *A* will simply be discarded.
-        """
-        try: return self.cache[arg]
-        except KeyError: pass
-        except TypeError: # could be unhashable rgb seq
-            arg = tuple(arg)
-            try: return self.cache[arg]
-            except KeyError: pass
-            except TypeError:
-                raise ValueError(
-                      'to_rgb: arg "%s" is unhashable even inside a tuple'
-                                    % (str(arg),))
+        If *arg* is *RGBA*, the *A* will simply be discarded.
 
-        try:
-            if cbook.is_string_like(arg):
-                argl = arg.lower()
-                color = self.colors.get(argl, None)
-                if color is None:
-                    str1 = cnames.get(argl, argl)
-                    if str1.startswith('#'):
-                        color = hex2color(str1)
-                    else:
-                        fl = float(argl)
-                        if fl < 0 or fl > 1:
-                            raise ValueError(
-                                   'gray (string) must be in range 0-1')
-                        color = tuple([fl]*3)
-            elif cbook.iterable(arg):
-                if len(arg) > 4 or len(arg) < 3:
-                    raise ValueError(
-                           'sequence length is %d; must be 3 or 4'%len(arg))
-                color = tuple(arg[:3])
-                if [x for x in color if (float(x) < 0) or  (x > 1)]:
-                    # This will raise TypeError if x is not a number.
-                    raise ValueError('number in rbg sequence outside 0-1 range')
-            else:
-                raise ValueError('cannot convert argument to rgb sequence')
+        The rc gray setting is taken into account."""
+        
+        arg = np.asarray(arg)
 
-            self.cache[arg] = color
+        if arg.dtype.kind == 'S':
+            # String array, apply string conversion.
+            return self.string_to_rgba_array(arg)
+        else:
+            # numeric operation.
+            return self.numeric_to_rgba_array(arg)
 
-        except (KeyError, ValueError, TypeError), exc:
-            raise ValueError('to_rgb: Invalid rgb arg "%s"\n%s' % (str(arg), exc))
-            # Error messages could be improved by handling TypeError
-            # separately; but this should be rare and not too hard
-            # for the user to figure out as-is.
-        return color
+    #
+    # Lagacy layer ...
+    #
+
+    def to_rgb(self, arg):
+        """Legaacy layer.  Returns pure-Python tuple.  Colour channel is
+        tuple index."""
+
+        return tuple(self.to_rgba_array(arg).tolist()[:3])
 
     def to_rgba(self, arg, alpha=None):
-        """
-        Returns an *RGBA* tuple of four floats from 0-1.
+        """Legacy layer.  Returns pure-Python tuple.  Colour channel is
+        tuple index.   If *arg*.lower() is 'none', (0, 0, 0, 0) will be
+        returned."""
+        
+        if isinstance(arg, str) and arg.lower() == 'none':
+            return (0.0, 0.0, 0.0, 0.0)
 
-        For acceptable values of *arg*, see :meth:`to_rgb`.
-        In addition, if *arg* is "none" (case-insensitive),
-        then (0,0,0,0) will be returned.
-        If *arg* is an *RGBA* sequence and *alpha* is not *None*,
-        *alpha* will replace the original *A*.
-        """
-        try:
-            if arg.lower() == 'none':
-                return (0.0, 0.0, 0.0, 0.0)
-        except AttributeError:
-            pass
-
-        try:
-            if not cbook.is_string_like(arg) and cbook.iterable(arg):
-                if len(arg) == 4:
-                    if [x for x in arg if (float(x) < 0) or  (x > 1)]:
-                        # This will raise TypeError if x is not a number.
-                        raise ValueError('number in rbga sequence outside 0-1 range')
-                    if alpha is None:
-                        return tuple(arg)
-                    if alpha < 0.0 or alpha > 1.0:
-                        raise ValueError("alpha must be in range 0-1")
-                    return arg[0], arg[1], arg[2], alpha
-                r,g,b = arg[:3]
-                if [x for x in (r,g,b) if (float(x) < 0) or  (x > 1)]:
-                    raise ValueError('number in rbg sequence outside 0-1 range')
-            else:
-                r,g,b = self.to_rgb(arg)
-            if alpha is None:
-                alpha = 1.0
-            return r,g,b,alpha
-        except (TypeError, ValueError), exc:
-            raise ValueError('to_rgba: Invalid rgba arg "%s"\n%s' % (str(arg), exc))
-
-    def to_rgba_array(self, c, alpha=None):
-        """
-        Returns a numpy array of *RGBA* tuples.
-
-        Accepts a single mpl color spec or a sequence of specs.
-
-        Special case to handle "no color": if *c* is "none" (case-insensitive),
-        then an empty array will be returned.  Same for an empty list.
-        """
-        try:
-            nc = len(c)
-        except TypeError:
-            raise ValueError(
-                "Cannot convert argument type %s to rgba array" % type(c))
-        try:
-            if nc == 0 or c.lower() == 'none':
-                return np.zeros((0,4), dtype=np.float)
-        except AttributeError:
-            pass
-        try:
-            # Single value? Put it in an array with a single row.
-            return np.array([self.to_rgba(c, alpha)], dtype=np.float)
-        except ValueError:
-            if isinstance(c, np.ndarray):
-                if c.ndim != 2 and c.dtype.kind not in 'SU':
-                    raise ValueError("Color array must be two-dimensional")
-                if (c.ndim == 2 and c.shape[1] == 4 and c.dtype.kind == 'f'):
-                    if (c.ravel() > 1).any() or (c.ravel() < 0).any():
-                        raise ValueError(
-                            "number in rgba sequence is outside 0-1 range")
-                    result = np.asarray(c, np.float)
-                    if alpha is not None:
-                        if alpha > 1 or alpha < 0:
-                            raise ValueError("alpha must be in 0-1 range")
-                        result[:,3] = alpha
-                    return result
-                    # This alpha operation above is new, and depends
-                    # on higher levels to refrain from setting alpha
-                    # to values other than None unless there is
-                    # intent to override any existing alpha values.
-
-            # It must be some other sequence of color specs.
-            result = np.zeros((nc, 4), dtype=np.float)
-            for i, cc in enumerate(c):
-                result[i] = self.to_rgba(cc, alpha)
-            return result
+        return tuple(self.to_rgba_array(arg, alpha=alpha).tolist())
 
 colorConverter = ColorConverter()
 

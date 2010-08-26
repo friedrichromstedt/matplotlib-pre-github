@@ -14,7 +14,7 @@ contains all the plot elements.  The following classes are defined
 import numpy as np
 
 import artist
-from artist import Artist, allow_rasterization
+from artist import Artist, allow_rasterization, take_gray_into_account
 from axes import Axes, SubplotBase, subplot_class_factory
 from cbook import flatten, allequal, Stack, iterable, is_string_like
 import _image
@@ -726,6 +726,7 @@ class Figure(Artist):
         self.clf()
 
     @allow_rasterization
+    @take_gray_into_account
     def draw(self, renderer):
         """
         Render the figure using :class:`matplotlib.backend_bases.RendererBase` instance renderer

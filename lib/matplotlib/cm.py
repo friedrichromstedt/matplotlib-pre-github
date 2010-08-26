@@ -161,37 +161,73 @@ class ScalarMappable:
         self.colorbar = im, ax
 
     def to_rgba(self, x, alpha=None, bytes=False):
-        '''Return a normalized rgba array corresponding to *x*. If *x*
-        is already an rgb array, insert *alpha*; if it is already
-        rgba, return it unchanged. If *bytes* is True, return rgba as
-        4 uint8s instead of 4 floats.
-        '''
+        """Return a rgba array corresponding to *x*, taking *alpha* and 
+        *bytes* into account.
+        
+        If *x* is a np.ndarray and already an colour array, insert *alpha* if
+        of rgb type, else if already rgba, ignore *alpha*.  In all other cases
+        normalise and colormap *x*, and insert *alpha* if necessary.
+        
+        *alpha* is always assumed to be in the [0, 1] scale.
+        
+        If *bytes* is True, return the rgba array with dtype=np.uint8s in
+        scale range [0, 255], else as floats in scale range [0, 1].
+
+        No clipping is perfomed.  Gray conversion is performed if requested
+        in rc params (ITU-R 601-2 luma transform).  The operations are
+        carried out in float space [0, 1] internally."""
+
         if alpha is None:
-            _alpha = 1.0
+            alpha = np.asarray(1.0)
         else:
-            _alpha = alpha
-        try:
-            if x.ndim == 3:
-                if x.shape[2] == 3:
-                    if x.dtype == np.uint8:
-                        _alpha = np.array(_alpha*255, np.uint8)
-                    m, n = x.shape[:2]
-                    xx = np.empty(shape=(m,n,4), dtype = x.dtype)
-                    xx[:,:,:3] = x
-                    xx[:,:,3] = _alpha
-                elif x.shape[2] == 4:
-                    xx = x
-                else:
-                    raise ValueError("third dimension must be 3 or 4")
-                if bytes and xx.dtype != np.uint8:
-                    xx = (xx * 255).astype(np.uint8)
-                return xx
-        except AttributeError:
-            pass
-        x = ma.asarray(x)
-        x = self.norm(x)
-        x = self.cmap(x, alpha=alpha, bytes=bytes)
-        return x
+            # See __doc__ string:
+            alpha = np.asarray(alpha)
+
+        if isinstance(x, np.ndarray) and x.ndim == 3:
+            # We are going to process a colour array.
+            #
+            # We convert to float if given in bytes.
+            if x.dtype.kind == 'i':
+                input_colour_array = np.asarray(x, dtype=np.float) / 255.0
+            else:
+                input_colour_array = x
+
+            # Insert alpha if necessary ...
+
+            if x.shape[-1] == 3:
+                # We have a rgb array.  Add alpha:
+                m, n = input_colour_array.shape[:2]
+                rgba = np.empty(shape=(m,n,4))
+                rgba[:,:,:3] = input_colour_array
+                rgba[:,:,3] = alpha
+            elif x.shape[-1] == 4:
+                rgba = input_colour_array
+            else:
+                raise ValueError("can only handle rgb or rgba data")
+        
+            # Convert to grayscale if requested ...
+
+            rgba = colors.colorConverter.rgba_apply_rc_gray_setting(rgba)
+
+            # Convert to bytes if requested ...
+
+            if bytes:
+                output_rgba = (rgba * 255).astype(np.uint8)
+            else:
+                output_rgba = rgba
+
+            # Finished.
+            return output_rgba
+
+        else:
+            # If not 3-dimensional, *x* is to be normalised first.
+            x = ma.asarray(x)
+            x = self.norm(x)
+            # We do bytes transform later, this saves full colour precision:
+            x = self.cmap(x, alpha=alpha, bytes=False)
+
+            # Process it via this function again to get the desired result:
+            return self.to_rgba(x, alpha=alpha, bytes=bytes)
 
     def set_array(self, A):
         'Set the image array from numpy array *A*'
