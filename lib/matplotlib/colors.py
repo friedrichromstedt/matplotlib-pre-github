@@ -276,7 +276,7 @@ class ColorConverter:
             return np.asarray([gray, gray, gray, alpha]).T
 
     def numeric_to_rgba_array(self, numeric_colour, alpha=None):
-        """*numeric_colour* will be passed through np.asarray, and its first
+        """*numeric_colour* will be passed through np.asarray, and its last
         dimension will be interpreted as the colour dimension.  It will be 
         converted to grayscale via ITU-R 601-2 luma transform.  If *alpha*
         is given, it overrides the alpha channel if present, *alpha* defaults
@@ -286,8 +286,10 @@ class ColorConverter:
         rc setting is taken into account.
         
         Returned is the resulting colour rgba ndarray."""
+
+        numeric_colour = np.asarray(numeric_colour)
     
-        if numeric_colour.shape[0] == 3:
+        if numeric_colour.shape[-1] == 3:
             # rgb data.  Construct matching rgba array and copy data over.
             colour_rgba = np.empty(list(numeric_colour.shape)[:-1] + [4])
             colour_rgba[..., :3] = numeric_colour
@@ -298,7 +300,7 @@ class ColorConverter:
             else:
                 colour_rgba[..., 3] = alpha
 
-        elif numeric_colour.shape[0] == 4:
+        elif numeric_colour.shape[-1] == 4:
             # rgba data.  Copy data.
             colour_rgba = np.copy(numeric_colour)
 
@@ -316,7 +318,8 @@ class ColorConverter:
         string_lower = string.lower()
 
         if string_lower in self.colors:
-            color = self.colors[string_lower]
+            (r, g, b) = np.asarray(self.colors[string_lower])
+            color = np.asarray([r, g, b, 1.0])
         else:
             if string_lower in cnames:
                 spec = cnames[string_lower]
@@ -324,24 +327,22 @@ class ColorConverter:
                 spec = string_lower
 
             if spec.startswith('#'):
-                color = hex2color(spec)
+                (r, g, b) = hex2color(spec)
+                color = np.asarray([r, g, b, 1.0])
+            elif spec == 'none':
+                color = np.zeros(4)
             else:
-                fl = float(spec)
-                if fl < 0 or fl > 1:
+                gray = float(spec)
+                if not (0 <= gray <= 1):
                     raise ValueError(
                            'gray (string) must be in range 0-1')
-                color = tuple([fl]*3)
+                color = np.asarray([gray, gray, gray, 1.0])
 
-        (r, g, b) = color
-        return np.asarray([r, g, b, 1])
-
-    # Converts the strings to the last index running:
-    _string_to_rgba_array = np.frompyfunc(
-            single_string_to_rgba_array, 2, 1)
+        return color
 
     def string_to_rgba_array(self, string_colour, alpha=None):
         """Converts all elements of *string_colour* to colours.  The
-        channel index is the first index of the return value."""
+        channel index is the last index of the return value."""
 
         string_colour = np.asarray(string_colour)
 
@@ -363,7 +364,7 @@ class ColorConverter:
         # Apply rc gray setting:
         return self.rgba_apply_rc_gray_setting(numeric_colour)
 
-    def to_rgba_array(self, arg, alpha=None):
+    def to_rgba_raw_array(self, arg, alpha=None):
         """
         Returns an *RGBA* tuple of three floats from 0-1.
 
@@ -383,10 +384,10 @@ class ColorConverter:
 
         if arg.dtype.kind == 'S':
             # String array, apply string conversion.
-            return self.string_to_rgba_array(arg)
+            return self.string_to_rgba_array(arg, alpha=alpha)
         else:
             # numeric operation.
-            return self.numeric_to_rgba_array(arg)
+            return self.numeric_to_rgba_array(arg, alpha=alpha)
 
     #
     # Lagacy layer ...
@@ -396,17 +397,24 @@ class ColorConverter:
         """Legaacy layer.  Returns pure-Python tuple.  Colour channel is
         tuple index."""
 
-        return tuple(self.to_rgba_array(arg).tolist()[:3])
+        return tuple(self.to_rgba_raw_array(arg).tolist()[:3])
 
     def to_rgba(self, arg, alpha=None):
         """Legacy layer.  Returns pure-Python tuple.  Colour channel is
         tuple index.   If *arg*.lower() is 'none', (0, 0, 0, 0) will be
         returned."""
         
-        if isinstance(arg, str) and arg.lower() == 'none':
-            return (0.0, 0.0, 0.0, 0.0)
+        return tuple(self.to_rgba_raw_array(arg, alpha=alpha).tolist())
 
-        return tuple(self.to_rgba_array(arg, alpha=alpha).tolist())
+    def to_rgba_array(self, arg, alpha=None):
+        """Like ``to_rgba_raw_array``, but prepeds an additional axis if
+        the result is only one-dimensional."""
+
+        raw = self.to_rgba_raw_array(arg, alpha=alpha)
+        if raw.ndim == 1:
+            return raw[np.newaxis]
+        else:
+            return raw
 
 colorConverter = ColorConverter()
 
