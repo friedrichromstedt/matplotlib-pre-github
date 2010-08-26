@@ -1,3 +1,10 @@
+2010-08-27 Made grayscale rc setting working, including untested artist 
+           gray flag via draw() decorator.  Major refactoring of 
+           colors.ColorConverter done, minor changes in cm.ScalarMappable
+           color conversion methods.  colors.colorConverter is now much 
+           more capable:  unlimited dimensionality, conversion of 
+           color name string arrays, alpha arrays.
+
 2010-08-21 Remove unused and inappropriate methods from Tick classes:
            set_view_interval, get_minpos, and get_data_interval are
            properly found in the Axis class and don't need to be

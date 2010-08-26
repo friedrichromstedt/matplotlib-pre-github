@@ -257,7 +257,7 @@ class ColorConverter:
     
     def rgba_apply_rc_gray_setting(self, rgba_colour):
         """Applies the rc gray setting.  Colour channels in the last 
-        dimension."""
+        dimension.  Grayscale conversion via ITU-R 601-2 luma transform."""
 
         if not mpl.rcParams['gray']:
             return rgba_colour
@@ -277,8 +277,7 @@ class ColorConverter:
 
     def numeric_to_rgba_array(self, numeric_colour, alpha=None):
         """*numeric_colour* will be passed through np.asarray, and its last
-        dimension will be interpreted as the colour dimension.  It will be 
-        converted to grayscale via ITU-R 601-2 luma transform.  If *alpha*
+        dimension will be interpreted as the colour dimension.  If *alpha*
         is given, it overrides the alpha channel if present, *alpha* defaults
         to 1.0 if no alpha channel is present in *numeric_colour*.
         
@@ -342,7 +341,8 @@ class ColorConverter:
 
     def string_to_rgba_array(self, string_colour, alpha=None):
         """Converts all elements of *string_colour* to colours.  The
-        channel index is the last index of the return value."""
+        channel index is the last index of the return value.  RC gray setting
+        taken into account."""
 
         string_colour = np.asarray(string_colour)
 
@@ -365,18 +365,17 @@ class ColorConverter:
         return self.rgba_apply_rc_gray_setting(numeric_colour)
 
     def to_rgba_raw_array(self, arg, alpha=None):
-        """
-        Returns an *RGBA* tuple of three floats from 0-1.
-
-        *arg* can be an *RGB* or *RGBA* sequence or a string in any of
-        several forms:
+        """Converts string arrays and numeric colour arrays.  Strings are
+        interpreted as colour specifications:
 
             1) a letter from the set 'rgbcmykw'
             2) a hex color string, like '#00FFFF'
             3) a standard name, like 'aqua'
             4) a float, like '0.4', indicating gray on a 0-1 scale
 
-        If *arg* is *RGBA*, the *A* will simply be discarded.
+        Numeric colour arrays have their colour channel index in the last
+        dimension.  Both rgb and rgba colour arrays are accepted.  *alpha*,
+        if given, replaces any present alpha channel, and can be an array.
 
         The rc gray setting is taken into account."""
         
@@ -407,7 +406,7 @@ class ColorConverter:
         return tuple(self.to_rgba_raw_array(arg, alpha=alpha).tolist())
 
     def to_rgba_array(self, arg, alpha=None):
-        """Like ``to_rgba_raw_array``, but prepeds an additional axis if
+        """Like ``to_rgba_raw_array``, but prepends an additional axis if
         the result is only one-dimensional."""
 
         raw = self.to_rgba_raw_array(arg, alpha=alpha)
