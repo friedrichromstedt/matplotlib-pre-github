@@ -237,7 +237,7 @@ class Collection(artist.Artist, cm.ScalarMappable):
         ind = mpath.point_in_path_collection(
             mouseevent.x, mouseevent.y, self._pickradius,
             transform.frozen(), paths, self.get_transforms(),
-            offsets, transOffset, len(self._facecolors)>0)
+            offsets, transOffset, len(self.get_facecolors())>0)
         return len(ind)>0,dict(ind=ind)
 
     def set_pickradius(self,pickradius): self.pickradius = 5
@@ -392,22 +392,32 @@ class Collection(artist.Artist, cm.ScalarMappable):
         except AttributeError:
             pass
         if c is None: c = mpl.rcParams['patch.facecolor']
+        # FIXME: Do we really need the *_original attributes?
         self._facecolors_original = c
-        self._facecolors = mcolors.colorConverter.to_rgba_array(c, self._alpha)
+        # We pass through colorConverter.to_rgba_array() on get() time, 
+        # because then and not now the gray setting shall be taken into
+        # account.
+        self._facecolors = c
 
     def set_facecolors(self, c):
         """alias for set_facecolor"""
         return self.set_facecolor(c)
 
     def get_facecolor(self):
-        return self._facecolors
+        # To allow rc gray setting to take effect, we pass through
+        # colorConverter.to_rgba_array() here, and not in set_facecolor().
+        return mcolors.colorConverter.to_rgba_array(self._facecolors, 
+            self._alpha)
     get_facecolors = get_facecolor
 
     def get_edgecolor(self):
         if self._edgecolors == 'face':
             return self.get_facecolors()
         else:
-            return self._edgecolors
+            # To allow rc gray setting to take effect, we pass through
+            # colorConverter.to_rgba_array() here, and not in set_edgecolor()
+            return mcolors.colorConverter.to_rgba_array(self._edgecolors,
+                self._alpha)
     get_edgecolors = get_edgecolor
 
     def set_edgecolor(self, c):
@@ -431,11 +441,16 @@ class Collection(artist.Artist, cm.ScalarMappable):
             pass
         if c == 'face':
             self._edgecolors = 'face'
+            # FIXME: Do we really need the *_original attributes?
             self._edgecolors_original = 'face'
         else:
             if c is None: c = mpl.rcParams['patch.edgecolor']
+            # FIXME: Do we really need the *_original attributes?
             self._edgecolors_original = c
-            self._edgecolors = mcolors.colorConverter.to_rgba_array(c, self._alpha)
+            # We pass through colorConverter.to_rgba_array() on get() time, 
+            # because then and not now the gray setting shall be taken into
+            # account.
+            self._edgecolors = c
 
 
     def set_edgecolors(self, c):
@@ -455,17 +470,6 @@ class Collection(artist.Artist, cm.ScalarMappable):
             except TypeError:
                 raise TypeError('alpha must be a float or None')
         artist.Artist.set_alpha(self, alpha)
-        try:
-            self._facecolors = mcolors.colorConverter.to_rgba_array(
-                self._facecolors_original, self._alpha)
-        except (AttributeError, TypeError, IndexError):
-            pass
-        try:
-            if self._edgecolors_original != 'face':
-                self._edgecolors = mcolors.colorConverter.to_rgba_array(
-                    self._edgecolors_original, self._alpha)
-        except (AttributeError, TypeError, IndexError):
-            pass
 
     def get_linewidths(self):
         return self._linewidths
@@ -493,8 +497,10 @@ class Collection(artist.Artist, cm.ScalarMappable):
 
         artist.Artist.update_from(self, other)
         self._antialiaseds = other._antialiaseds
+        # FIXME: Do we really need the *_original attributes?
         self._edgecolors_original = other._edgecolors_original
         self._edgecolors = other._edgecolors
+        # FIXME: Do we really need the *_original attributes?
         self._facecolors_original = other._facecolors_original
         self._facecolors = other._facecolors
         self._linewidths = other._linewidths

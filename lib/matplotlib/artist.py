@@ -67,11 +67,11 @@ def take_gray_into_account(draw):
     rcParams['gray'] is set to True during the draw() call.  After the 
     call, it is reset to its former value.
     """
-    def wrapped(self, renderer):
+    def wrapped(self, renderer, *args, **kwargs):
         if self.get_gray():
             old_rcparam = rcParams['gray']
             rcParams['gray'] = True
-            draw(self, renderer)
+            draw(self, renderer, *args, **kwargs)
             rcParams['gray'] = old_rcparam
         else:
             draw(self, renderer)

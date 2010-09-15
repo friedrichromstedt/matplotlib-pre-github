@@ -16,6 +16,7 @@ from matplotlib.transforms import Bbox
 from matplotlib import collections
 import numpy as np
 from matplotlib.colors import Normalize, colorConverter, LightSource
+from matplotlib.artist import take_gray_into_account
 
 import art3d
 import proj3d
@@ -154,6 +155,7 @@ class Axes3D(Axes):
                  (tc[7], tc[4])]
         return edges
 
+    @take_gray_into_account
     def draw(self, renderer):
         # draw the background patch
         self.axesPatch.draw(renderer)
