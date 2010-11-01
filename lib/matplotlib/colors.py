@@ -400,7 +400,7 @@ class ColorConverter:
 
     def to_rgba(self, arg, alpha=None):
         """Legacy layer.  Returns pure-Python tuple.  Colour channel is
-        tuple index.   If *arg*.lower() is 'none', (0, 0, 0, 0) will be
+        tuple index.   If *arg*.lower() == 'none', (0, 0, 0, 0) will be
         returned."""
         
         return tuple(self.to_rgba_raw_array(arg, alpha=alpha).tolist())

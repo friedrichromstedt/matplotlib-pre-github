@@ -826,14 +826,10 @@ class GraphicsContextBase:
         html hex color string, an rgb unit tuple, or a float between 0
         and 1.  In the latter case, grayscale is used.
 
-        The :class:`GraphicsContextBase` converts colors to rgb
-        internally.  If you know the color is rgb already, you can set
-        ``isRGB=True`` to avoid the performace hit of the conversion
+        The *isRGB* argument exists for historical reasons and has no effect
+        since grayscale support has been introduced.
         """
-        if isRGB:
-            self._rgb = fg
-        else:
-            self._rgb = colors.colorConverter.to_rgba(fg)
+        self._rgb = colors.colorConverter.to_rgba(fg)
 
     def set_graylevel(self, frac):
         """
