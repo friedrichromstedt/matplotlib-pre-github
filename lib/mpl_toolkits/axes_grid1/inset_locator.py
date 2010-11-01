@@ -6,6 +6,7 @@ import matplotlib.transforms as mtrans
 from mpl_axes import Axes
 
 from matplotlib.transforms import Bbox, TransformedBbox, IdentityTransform
+from matplotlib.artist import take_gray_into_account
 
 from matplotlib.patches import Patch
 from matplotlib.path import Path
@@ -37,6 +38,7 @@ class AnchoredLocatorBase(AnchoredOffsetbox):
                                                  bbox_transform=bbox_transform)
 
 
+   @take_gray_into_account
    def draw(self, renderer):
        raise RuntimeError("No draw method should be called")
 

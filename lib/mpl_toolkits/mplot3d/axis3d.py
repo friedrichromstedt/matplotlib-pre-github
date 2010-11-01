@@ -172,6 +172,7 @@ class Axis(maxis.XAxis):
 
         renderer.close_group('pane3d')
 
+    # take_gray_into_account not needed
     def draw(self, renderer):
         self.label._transform = self.axes.transData
         renderer.open_group('axis3d')

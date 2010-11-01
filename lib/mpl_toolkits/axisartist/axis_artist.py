@@ -99,7 +99,7 @@ from matplotlib.collections import LineCollection
 
 from matplotlib import rcParams
 
-from matplotlib.artist import allow_rasterization
+from matplotlib.artist import allow_rasterization, take_gray_into_account
 
 import warnings
 
@@ -128,6 +128,7 @@ class BezierPath(mlines.Line2D):
         self._invalid = True
 
 
+    @take_gray_into_account
     def draw(self, renderer):
         if self._invalid:
             self.recache()
@@ -277,6 +278,7 @@ class Ticks(Line2D, AttributeCopier):
 
     _tickvert_path = Path([[0., 0.], [1., 0.]])
 
+    @take_gray_into_account
     def draw(self, renderer):
         if not self.get_visible():
             return
@@ -399,6 +401,7 @@ class LabelBase(mtext.Text):
     def _update(self, renderer):
         pass
 
+    @take_gray_into_account
     def draw(self, renderer):
         if not self.get_visible(): return
 
@@ -605,6 +608,7 @@ class AxisLabel(LabelBase, AttributeCopier):
     def get_color(self):
         return self.get_attribute_from_ref_artist("color", "k")
 
+    @take_gray_into_account
     def draw(self, renderer):
         if not self.get_visible():
             return
@@ -753,6 +757,7 @@ class TickLabels(AxisLabel, AttributeCopier): # mtext.Text
                            top=180)
 
 
+    @take_gray_into_account
     def draw(self, renderer):
         if not self.get_visible():
             self._axislabel_pad = self._get_external_pad()
@@ -870,6 +875,7 @@ class GridlinesCollection(LineCollection):
     def set_grid_helper(self, grid_helper):
         self._grid_helper = grid_helper
 
+    @take_gray_into_account
     def draw(self, renderer):
         if self._grid_helper is not None:
             self._grid_helper.update_lim(self.axes)
@@ -1362,6 +1368,7 @@ class AxisArtist(martist.Artist):
 
 
     @allow_rasterization
+    @take_gray_into_account
     def draw(self, renderer):
         'Draw the axis lines, tick lines and labels'
 

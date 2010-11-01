@@ -55,7 +55,7 @@ from matplotlib.collections import LineCollection
 
 from matplotlib import rcParams
 
-from matplotlib.artist import allow_rasterization
+from matplotlib.artist import allow_rasterization, take_gray_into_account
 
 import warnings
 
@@ -719,6 +719,7 @@ class Axes(maxes.Axes):
 
 
 
+    @take_gray_into_account
     def draw(self, renderer, inframe=False):
 
         if not self._axisline_on:

@@ -70,6 +70,7 @@ class Text3D(mtext.Text):
         self._position3d = np.array((x, y, z))
         self._dir_vec = get_dir_vector(zdir)
 
+    # take_gray_into_account not needed
     def draw(self, renderer):
         proj = proj3d.proj_trans_points([self._position3d, \
                 self._position3d + self._dir_vec], renderer.M)
@@ -112,6 +113,7 @@ class Line3D(lines.Line2D):
             pass
         self._verts3d = juggle_axes(xs, ys, zs, zdir)
 
+    # take_gray_into_account not needed
     def draw(self, renderer):
         xs3d, ys3d, zs3d = self._verts3d
         xs, ys, zs = proj3d.proj_transform(xs3d, ys3d, zs3d, renderer.M)
@@ -184,6 +186,7 @@ class Line3DCollection(LineCollection):
             minz = min(minz, min(zs))
         return minz
 
+    # take_gray_into_account not needed
     def draw(self, renderer, project=False):
         if project:
             self.do_3d_projection(renderer)
@@ -229,6 +232,7 @@ class Patch3D(Patch):
         self._facecolor2d = self._facecolor3d
         return min(vzs)
 
+    # take_gray_into_account not needed
     def draw(self, renderer):
         Patch.draw(self, renderer)
 
@@ -317,6 +321,7 @@ class Patch3DCollection(PatchCollection):
 
         return min(vzs)
 
+    # take_gray_into_account not needed
     def draw(self, renderer):
         self._old_draw(renderer)
 
@@ -471,13 +476,18 @@ class Poly3DCollection(PolyCollection):
     set_edgecolors = set_edgecolor
 
     def get_facecolors(self):
-        return self._facecolors2d
+        # In order to let rc gray setting take effect, we pass through
+        # colorConverter.to_rgba_array().
+        return mcolors.colorConverter.to_rgba_array(self._facecolors2d)
     get_facecolor = get_facecolors
 
     def get_edgecolors(self):
-        return self._edgecolors2d
+        # In order to let rc gray setting take effect, we pass through
+        # colorConverter.to_rgba_array().
+        return mcolors.colorConverter.to_rgba_array(self._edgecolors2d)
     get_edgecolor = get_edgecolors
 
+    # take_gray_into_account not needed
     def draw(self, renderer):
         return Collection.draw(self, renderer)
 
