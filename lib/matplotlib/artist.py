@@ -74,7 +74,7 @@ def take_gray_into_account(draw):
             draw(self, renderer, *args, **kwargs)
             rcParams['gray'] = old_rcparam
         else:
-            draw(self, renderer)
+            draw(self, renderer, *args, **kwargs)
 
     return wrapped
 
