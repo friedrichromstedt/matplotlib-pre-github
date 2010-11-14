@@ -68,7 +68,17 @@ def take_gray_into_account(draw):
     call, it is reset to its former value.
     """
     def wrapped(self, renderer, *args, **kwargs):
-        if self.get_gray():
+        # In the end ``gray`` contains the boolean gray truth value.
+        # Follow symbolic links:
+        gray = self.get_gray()
+        while isinstance(gray, Artist):
+            # ``gray`` is not the truth value, but a symbolic link to another
+            # object, and the gray setting of ``self`` is that of the linked
+            # object.
+            gray = gray.get_gray()
+
+        # Now ``gray`` contains the truth value.
+        if gray:
             old_rcparam = rcParams['gray']
             rcParams['gray'] = True
             draw(self, renderer, *args, **kwargs)
