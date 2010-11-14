@@ -86,6 +86,14 @@ def take_gray_into_account(draw):
         else:
             draw(self, renderer, *args, **kwargs)
 
+    # Copy over attributes from the wrapped function ...
+    
+    # Copy the doc string:
+    wrapped.__doc__ = draw.__doc__
+    # Copy the attributes, this includes "_support_rasterization" if that
+    # exists (._support_rasterization is set by @supports_rasterization):
+    wrapped.__dict__ = draw.__dict__
+
     return wrapped
 
 
