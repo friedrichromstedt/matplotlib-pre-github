@@ -712,6 +712,16 @@ class Colorbar(ColorbarBase):
         kw['cmap'] = mappable.cmap
         kw['norm'] = mappable.norm
 
+        # Check if the gray mode is not yet activated; we enable linkage only
+        # if it has not been set manually by the user.
+        # MAINTENANCE NOTE: Code duplicated in 
+        # mpl_toolkits.axes_grid1.colorbar.Colorbar.
+        if ax.get_gray() is False:
+            # Gray mode not set; establish a link from the colobar axes to the
+            # mappable.  Thus the gray mode of the colorbar axes will be that
+            # of the mappable.
+            ax.set_gray(mappable)
+
         if isinstance(mappable, contour.ContourSet):
             CS = mappable
             kw['alpha'] = mappable.get_alpha()

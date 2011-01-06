@@ -1104,10 +1104,6 @@ class Figure(Artist):
         cax.hold(True)
         cb = cbar.Colorbar(cax, mappable, **kw)
 
-        # Establish a symbolic link for gray mode, such that the cax
-        # inherit the gray mode from the ax:
-        cax.set_gray(ax)
-
         def on_changed(m):
             #print 'calling on changed', m.get_cmap().name
             cb.set_cmap(m.get_cmap())
